@@ -1,3 +1,4 @@
+
 class UserController{
 
     constructor(formId, tableId)
@@ -24,13 +25,15 @@ class UserController{
     addline(dataUser)
     {
         
-        document.getElementById(this.tableEl).innerHTML = `
+
+        console.log(dataUser);
+        this.tableEl.innerHTML = `
         <tr>
             <td><img src="dist/img/user1-128x128.jpg" alt="User Image" class="img-circle img-sm"></td>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>${user.admin}</td>
-            <td>${user.birth}</td>
+            <td>${dataUser.name}</td>
+            <td>${dataUser.email}</td>
+            <td>${dataUser.admin}</td>
+            <td>${dataUser.birth}</td>
             <td>
                 <button type="button" class="btn btn-primary btn-xs btn-flat">Editar</button>
                 <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
@@ -42,12 +45,14 @@ class UserController{
     getValues()
     {
         let user = {};
-        this.formEl.elements.forEach((element, index, array) =>{
+
+        console.log(this.formEl.elements);
+        [...this.formEl.elements].forEach((element, index, array) =>{
 
             if(element.name == "gender")
             {
                 if(element.checked) user[element.name] = element.value;
-                else return;
+                
             }
             else{
                 user[element.name] = element.value;
@@ -62,7 +67,7 @@ class UserController{
             user.birth, 
             user.country, 
             user.email, 
-            user.passwrod, 
+            user.password, 
             user.photo, 
             user.admin);
     
