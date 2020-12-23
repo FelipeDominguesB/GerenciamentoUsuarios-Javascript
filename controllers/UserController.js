@@ -1,4 +1,5 @@
 
+
 class UserController{
 
     constructor(formId, tableId)
@@ -16,12 +17,37 @@ class UserController{
             
             let user = this.getValues();
             
-            this.addline(user)
+            
+            
+            this.getPhoto((content) =>{
+                user.photo = content;
+                this.addline(user) 
+            });
+            
             
             
         });
     }
 
+    getPhoto(callback)
+    {
+        let fileReader = new FileReader();
+
+        let elements = [...this.formEl.elements].filter(item =>{
+            
+            if(item.name == 'photo'){
+                return item;
+            }
+        });
+
+        let file = elements[0].files[0];
+
+        fileReader.onload = ()=>{
+            callback(fileReader.result)
+        };
+
+        fileReader.readAsDataURL(file);
+    }
     addline(dataUser)
     {
         
@@ -29,7 +55,7 @@ class UserController{
         console.log(dataUser);
         this.tableEl.innerHTML = `
         <tr>
-            <td><img src="dist/img/user1-128x128.jpg" alt="User Image" class="img-circle img-sm"></td>
+            <td><img src="${dataUser.photo}" alt="User Image" class="img-circle img-sm"></td>
             <td>${dataUser.name}</td>
             <td>${dataUser.email}</td>
             <td>${dataUser.admin}</td>
