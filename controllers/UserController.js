@@ -1,16 +1,19 @@
-
 class UserController{
 
     constructor(formId, tableId)
     {
         this.formEl = document.getElementById(formId);
         this.tableEl = document.getElementById(tableId);
+        console.log('uhul fui construido');
+        
+        this.onSubmit();
+        this.onEditCancel();
     }
 
     onSubmit()
     {
 
-        
+        console.log('rodei pela primeira vez');
         this.formEl.addEventListener('submit', (event) =>{
             event.preventDefault();
             
@@ -20,7 +23,12 @@ class UserController{
 
             let user = this.getValues();
             
+            if(!user) { 
+                btnSubmit.disabled = false; 
+                return false; 
+            }
             this.getPhoto().then(
+
             (content) => {
                 user.photo = content;
                 this.addline(user);
@@ -34,6 +42,28 @@ class UserController{
             );            
         });
     }
+
+    onEditCancel()
+    {
+        console.log('fui chamado pra cancelar');
+        document.querySelector('#box-user-update .btn-cancel').addEventListener('click', (event) =>{
+            this.showPanelCreate();
+        });
+    }
+
+    showPanelCreate()
+    {
+        document.getElementById('box-user-create').style.display = 'block';
+        document.getElementById('box-user-update').style.display = 'none';
+    }
+
+    showPanelUpdate()
+    {
+        document.getElementById('box-user-create').style.display = 'none';
+        document.getElementById('box-user-update').style.display = 'block';
+    }
+
+    
 
     getPhoto()
     {
@@ -76,7 +106,7 @@ class UserController{
 
         let tr = document.createElement('tr');
 
-        
+        tr.dataset.user = JSON.stringify(dataUser);
 
         tr.innerHTML = `
         
@@ -86,21 +116,56 @@ class UserController{
             <td>${(dataUser.admin) ?  'Sim' : 'Não'}</td>
             <td>${Utils.dateFormat(dataUser.register)}</td>
             <td>
-                <button type="button" class="btn btn-primary btn-xs btn-flat">Editar</button>
+                <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
                 <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
             </td>
         
         `;;
+        tr.querySelector('.btn-edit').addEventListener('click', (event) =>{
+            JSON.parse(tr.dataset.user); 
+
+            this.showPanelUpdate();
+        });
+
 
         this.tableEl.appendChild(tr);
+
+        
+        this.updateCount()
     }
     
+    updateCount()
+    {
+        let numberUsers = 0;
+        let numberAdmins = 0;
+
+        [...this.tableEl.children].forEach( (tr) => {
+            numberUsers++;
+            
+            let user = JSON.parse(tr.dataset.user);
+
+            if(user._admin) numberAdmins++;
+        });
+
+        document.getElementById('numberUsers').innerHTML = numberUsers;
+        document.getElementById('numberAdmins').innerHTML = numberAdmins;
+    }
+
     getValues()
     {
+        
         let user = {};
-
-        console.log(this.formEl.elements);
+        let isValid = true;
+        
         [...this.formEl.elements].forEach((element, index, array) =>{
+
+            
+            if(['name', 'email', 'password'].indexOf(element.name) > -1 && !element.value)
+            {
+                element.parentElement.classList.add('has-error');
+                isValid = false;
+                
+            }
 
             if(element.name == "gender")
             {
@@ -117,11 +182,15 @@ class UserController{
                 user[element.name] = element.value;
             }
         
-
+       
             
         });
-    
-        return new User(
+
+            if(!isValid){
+            return false;
+            }
+
+            return new User(
             user.name, 
             user.gender, 
             user.birth, 
