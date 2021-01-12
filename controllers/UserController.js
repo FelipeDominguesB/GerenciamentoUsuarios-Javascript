@@ -26,31 +26,67 @@ class UserController{
             
             btnSubmit.disabled = true;
 
-            let user = this.getValues(this.formUpdateEl);
+            let values = this.getValues(this.formUpdateEl);
 
             let index = this.formUpdateEl.dataset.trIndex;
 
             let tr = this.tableEl.rows[index];
 
-            tr.dataset.user = JSON.stringify(user);
+            let userOld = JSON.parse(tr.dataset.user);
 
-            tr.innerHTML = `
+            let resultado = Object.assign({}, userOld, values);
+
+            
+            tr.dataset.user = JSON.stringify(resultado);
+
+            
+
+            
+            this.getPhoto(this.formUpdateEl).then(
+
+                (content) => {
+                    
+                    if(!values.photo)
+                    {   
+                        resultado._photo = userOld._photo;
+                    } 
+                    else{
+                        resultado._photo = content;
+                    }
+
+                    tr.innerHTML = `
         
-            <td><img src="${user.photo}" alt="User Image" class="img-circle img-sm"></td>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>${(user.admin) ?  'Sim' : 'Não'}</td>
-            <td>${Utils.dateFormat(user.register)}</td>
-            <td>
-                <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
-                <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
-            </td>
-        
-            `;
+                    <td><img src="${resultado._photo}" alt="User Image" class="img-circle img-sm"></td>
+                    <td>${resultado._name}</td>
+                    <td>${resultado._email}</td>
+                    <td>${(resultado._admin) ?  'Sim' : 'Não'}</td>
+                    <td>${Utils.dateFormat(resultado._register)}</td>
+                    <td>
+                        <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
+                        <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
+                    </td>
+                
+                    `;
 
 
-            this.addEventsTr(tr);
-            this.updateCount();
+                    this.addEventsTr(tr);
+
+                    this.updateCount();
+
+                    this.formUpdateEl.reset();
+
+                    btnSubmit.disabled = false;
+    
+                }, 
+                (e) => {
+                    console.error(e);
+                }
+                );
+
+                
+            
+            
+            this.showPanelCreate();
         });
     }
 
@@ -112,7 +148,7 @@ class UserController{
                 btnSubmit.disabled = false; 
                 return false; 
             }
-            this.getPhoto().then(
+            this.getPhoto(this.formEl).then(
 
             (content) => {
                 user.photo = content;
@@ -124,7 +160,8 @@ class UserController{
             (e) => {
                 console.error(e);
             }
-            );            
+            );
+
         });
     }
 
@@ -144,12 +181,12 @@ class UserController{
 
     
 
-    getPhoto()
+    getPhoto(formulario)
     {
         return new Promise((resolve, reject) =>{
             let fileReader = new FileReader();
 
-            let elements = [...this.formEl.elements].filter(item =>{
+            let elements = [...formulario.elements].filter(item =>{
                 
                 if(item.name == 'photo'){
                     return item;
