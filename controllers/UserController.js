@@ -1,14 +1,21 @@
+
+
 class UserController{
 
+    //Construtor da classe, pega os formulários de Criar, Atualizar e os Usuários
     constructor(formId, formIdUpdate, tableId)
     {
+        //Formulários
         this.formEl = document.getElementById(formId);
         this.formUpdateEl = document.getElementById(formIdUpdate);
         this.tableEl = document.getElementById(tableId);
-        console.log('uhul fui construido');
+        
+        
+        //Inicia os métodos de Edição e de Submeter
         
         this.onSubmit();
         this.onEdit();
+        this.selectAll();
     }
 
     onEdit()
@@ -54,6 +61,8 @@ class UserController{
                         resultado._photo = content;
                     }
 
+                    tr.dataset.user = JSON.stringify(resultado);
+
                     tr.innerHTML = `
         
                     <td><img src="${resultado._photo}" alt="User Image" class="img-circle img-sm"></td>
@@ -63,7 +72,7 @@ class UserController{
                     <td>${Utils.dateFormat(resultado._register)}</td>
                     <td>
                         <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
-                        <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
+                        <button type="button" class="btn btn-danger btn-excluir btn-xs btn-excluir btn-flat">Excluir</button>
                     </td>
                 
                     `;
@@ -92,6 +101,15 @@ class UserController{
 
     addEventsTr(tr)
     {
+
+        tr.querySelector('.btn-excluir').addEventListener('click', (e)=>{
+
+            if(confirm('Deseja realmente excluir?')){
+            tr.remove();
+            this.updateCount();
+            }
+        })
+
         tr.querySelector('.btn-edit').addEventListener('click', (event) =>{
 
             let jsonUser = JSON.parse(tr.dataset.user); 
@@ -127,6 +145,7 @@ class UserController{
                 }
             }
             this.formUpdateEl.querySelector('.photo').src = jsonUser._photo;
+            
             this.showPanelUpdate();
         });
     }
@@ -152,6 +171,9 @@ class UserController{
 
             (content) => {
                 user.photo = content;
+
+                this.insert(user);
+
                 this.addline(user);
                 this.formEl.reset();
                 btnSubmit.disabled = false;
@@ -167,12 +189,14 @@ class UserController{
 
     
 
+    //Mostra o painel de criar usuários
     showPanelCreate()
     {
         document.getElementById('box-user-create').style.display = 'block';
         document.getElementById('box-user-update').style.display = 'none';
     }
 
+    //Mostra o painel de editar usuários
     showPanelUpdate()
     {
         document.getElementById('box-user-create').style.display = 'none';
@@ -180,12 +204,14 @@ class UserController{
     }
 
     
-
+    //Usado pra pegar a foto, leva um formulário como padrão
     getPhoto(formulario)
     {
+        //Faz uma promisse que vai ler o arquivo
         return new Promise((resolve, reject) =>{
             let fileReader = new FileReader();
 
+            //Filtra a foto entre os elementos do formulário
             let elements = [...formulario.elements].filter(item =>{
                 
                 if(item.name == 'photo'){
@@ -193,16 +219,22 @@ class UserController{
                 }
             });
 
+            //Coloca o arquivo em uma variável
             let file = elements[0].files[0];
 
+
+            //Caso leia, o resultado do file reader é o arquivo
             fileReader.onload = ()=>{
                 resolve(fileReader.result)
             };
 
+
+            //Caso dê erro, apenas rejeita com o evento
             fileReader.onerror = (e) =>{
                 reject(e);
             }
 
+            //Caso leia o arquivo, ele coloca como data URl, se não, pega uma imagem padrão
             if(file){
                 fileReader.readAsDataURL(file);
             }
@@ -214,16 +246,59 @@ class UserController{
 
         
     }
+
+
+     getUserStorage()
+     {
+         let users = [];
+         if(sessionStorage.getItem('users')){
+             users = JSON.parse(sessionStorage.getItem('users'));
+         }
+         return users;
+
+     }
+
+     selectAll()
+     {
+         let users = this.getUserStorage();
+
+
+         users.forEach(dataUser =>{
+             let user = new User();
+
+             user.loadFromJSON(dataUser);
+          
+             this.addline(user);
+         });
+     }
+
+     //Local storage, basicamente
+     insert(dataUser)
+     {
+      
+         let users = this.getUserStorage();
+         users.push(dataUser);
+
+         sessionStorage.setItem('users', JSON.stringify(users));
+     }
+
+    //Adiciona uma linha à tabela, começa pegando o usuário
     addline(dataUser)
     {
         
 
-        console.log(dataUser);
+        //Cria uma table row
 
         let tr = document.createElement('tr');
+        
 
+        //Dataset serve pra, basicamente, colocar os dados do usuário no HTML
+        //Nesse momento, pegamos os dados do usuário, transformamos o JSON em string e colocamos no HTML
         tr.dataset.user = JSON.stringify(dataUser);
 
+
+        
+        //Após isso, o usuário é inserido dentro do HTML com todas suas informações
         tr.innerHTML = `
         
             <td><img src="${dataUser.photo}" alt="User Image" class="img-circle img-sm"></td>
@@ -233,7 +308,7 @@ class UserController{
             <td>${Utils.dateFormat(dataUser.register)}</td>
             <td>
                 <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
-                <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
+                <button type="button" class="btn btn-danger btn-excluir btn-xs btn-flat">Excluir</button>
             </td>
         
         `;
@@ -246,6 +321,7 @@ class UserController{
         this.updateCount()
     }
     
+    //Toda vez que um usuário é adicionado, a contagem do site é acrescentada 
     updateCount()
     {
         let numberUsers = 0;
