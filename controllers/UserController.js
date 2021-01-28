@@ -1,5 +1,3 @@
-
-
 class UserController{
 
     //Construtor da classe, pega os formulários de Criar, Atualizar e os Usuários
@@ -42,12 +40,6 @@ class UserController{
             let userOld = JSON.parse(tr.dataset.user);
 
             let resultado = Object.assign({}, userOld, values);
-
-            
-            tr.dataset.user = JSON.stringify(resultado);
-
-            
-
             
             this.getPhoto(this.formUpdateEl).then(
 
@@ -61,24 +53,12 @@ class UserController{
                         resultado._photo = content;
                     }
 
-                    tr.dataset.user = JSON.stringify(resultado);
+                    let user = new User();
 
-                    tr.innerHTML = `
-        
-                    <td><img src="${resultado._photo}" alt="User Image" class="img-circle img-sm"></td>
-                    <td>${resultado._name}</td>
-                    <td>${resultado._email}</td>
-                    <td>${(resultado._admin) ?  'Sim' : 'Não'}</td>
-                    <td>${Utils.dateFormat(resultado._register)}</td>
-                    <td>
-                        <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
-                        <button type="button" class="btn btn-danger btn-excluir btn-xs btn-excluir btn-flat">Excluir</button>
-                    </td>
-                
-                    `;
+                    user.loadFromJSON(resultado);
 
-
-                    this.addEventsTr(tr);
+                    user.save();
+                    tr = this.getTr(user, tr);
 
                     this.updateCount();
 
@@ -105,6 +85,13 @@ class UserController{
         tr.querySelector('.btn-excluir').addEventListener('click', (e)=>{
 
             if(confirm('Deseja realmente excluir?')){
+
+            let user = new User();
+
+            user.loadFromJSON(JSON.parse(tr.dataset.user));
+            
+            user.remove();
+
             tr.remove();
             this.updateCount();
             }
@@ -172,7 +159,7 @@ class UserController{
             (content) => {
                 user.photo = content;
 
-                this.insert(user);
+                user.save();
 
                 this.addline(user);
                 this.formEl.reset();
@@ -247,20 +234,9 @@ class UserController{
         
     }
 
-
-     getUserStorage()
-     {
-         let users = [];
-         if(sessionStorage.getItem('users')){
-             users = JSON.parse(sessionStorage.getItem('users'));
-         }
-         return users;
-
-     }
-
      selectAll()
      {
-         let users = this.getUserStorage();
+         let users = User.getUserStorage();
 
 
          users.forEach(dataUser =>{
@@ -272,33 +248,21 @@ class UserController{
          });
      }
 
-     //Local storage, basicamente
-     insert(dataUser)
-     {
-      
-         let users = this.getUserStorage();
-         users.push(dataUser);
-
-         sessionStorage.setItem('users', JSON.stringify(users));
-     }
+     
 
     //Adiciona uma linha à tabela, começa pegando o usuário
     addline(dataUser)
     {
         
-
-        //Cria uma table row
-
-        let tr = document.createElement('tr');
+        let tr = this.getTr(dataUser)
+        this.tableEl.appendChild(tr);
+        this.updateCount();
+    }
+    
+    getTr(dataUser, tr = null)
+    {
         
-
-        //Dataset serve pra, basicamente, colocar os dados do usuário no HTML
-        //Nesse momento, pegamos os dados do usuário, transformamos o JSON em string e colocamos no HTML
-        tr.dataset.user = JSON.stringify(dataUser);
-
-
-        
-        //Após isso, o usuário é inserido dentro do HTML com todas suas informações
+        if(tr === null) tr = document.createElement('tr');
         tr.innerHTML = `
         
             <td><img src="${dataUser.photo}" alt="User Image" class="img-circle img-sm"></td>
@@ -312,13 +276,11 @@ class UserController{
             </td>
         
         `;
-        
+        tr.dataset.user = JSON.stringify(dataUser);
         this.addEventsTr(tr);
 
-        this.tableEl.appendChild(tr);
 
-        
-        this.updateCount()
+        return tr;
     }
     
     //Toda vez que um usuário é adicionado, a contagem do site é acrescentada 
